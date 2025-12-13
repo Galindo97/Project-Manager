@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "C:\\Users\\Santiago Galindo\\project-manager\\backend\\venv\\Scripts\\python.exe",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.extraPaths": [
+        "./backend"
+    ]
+}

@@ -4,18 +4,20 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-			"dev": "vite dev",
-			"build": "vite build",
-			"preview": "vite preview",
-			"prepare": "svelte-kit sync || echo ''",
-			"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-			"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-			"format": "prettier --write .",
-			"lint": "prettier --check . && eslint .",
-			"predeploy": "npm run build",
-			"deploy": "gh-pages -d build"
-		},
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"format": "prettier --write .",
+		"lint": "prettier --check . && eslint .",
+		"predeploy": "npm run build",
+		"deploy": "gh-pages -d build"
+	},
+
 	"devDependencies": {
+		"@sveltejs/adapter-vercel": "^3.0.4",
 		"@eslint/compat": "^1.4.0",
 		"@eslint/js": "^9.38.0",
 		"@internationalized/date": "^3.10.0",

@@ -7,7 +7,8 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)  # Email es el identificador principal
+    username = Column(String, unique=True, index=True, nullable=False)  # ✅ AGREGADO
+    email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
@@ -46,6 +47,11 @@ class Task(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Campos adicionales para la vista de detalle
+    notes = Column(Text, nullable=True)  # JSON string de notas
+    progress = Column(Integer, default=0)  # Progreso 0-100
+    critical_points = Column(Text, nullable=True)  # JSON string de puntos críticos
     
     # Relationships
     owner = relationship("User", back_populates="tasks")

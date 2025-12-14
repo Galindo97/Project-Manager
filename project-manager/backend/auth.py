@@ -34,15 +34,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 def get_user_by_username(db: Session, username: str):
-    # En la base de datos, el campo username almacena el email
-    return db.query(models.User).filter(models.User.email == username).first()
+    """Obtener usuario por username"""  # ✅ CORREGIDO
+    return db.query(models.User).filter(models.User.username == username).first()
 
 def get_user_by_email(db: Session, email: str):
-    # Buscar por el campo username, que almacena el email
+    """Obtener usuario por email"""
     return db.query(models.User).filter(models.User.email == email).first()
 
 def authenticate_user(db: Session, username: str, password: str):
-    # username es realmente el email
+    """Autenticar usuario - username es el email en OAuth2"""
+    # En el estándar OAuth2, username puede ser email
     user = get_user_by_email(db, username)
     if not user:
         return False
@@ -51,6 +52,7 @@ def authenticate_user(db: Session, username: str, password: str):
     return user
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Obtener usuario actual desde el token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -64,6 +66,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         token_data = schemas.TokenData(email=email)
     except JWTError:
         raise credentials_exception
+    
     user = get_user_by_email(db, email=token_data.email)
     if user is None:
         raise credentials_exception

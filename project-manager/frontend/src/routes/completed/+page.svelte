@@ -44,7 +44,18 @@
   );
 
   async function fetchCompletedTasks() {
-    const res = await fetch(`${API_URL}/tasks/completed`);
+    const token = localStorage.getItem('access_token');
+    const res = await fetch(`${API_URL}/tasks/completed`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!res.ok) {
+      console.error('Error al obtener tareas completadas:', await res.text());
+      completedTasks = [];
+      return;
+    }
     const allTasks = await res.json();
     console.log('TAREAS RECIBIDAS DEL BACKEND:', allTasks);
     // Normalizar el campo completed a booleano real
@@ -54,10 +65,10 @@
       if (typeof val === 'number') return val === 1;
       return false;
     }
-    const normalizedTasks = allTasks.map((t: Task) => ({
+    const normalizedTasks = Array.isArray(allTasks) ? allTasks.map((t: Task) => ({
       ...t,
       completed: toBool(t.completed)
-    }));
+    })) : [];
     // Filtrar solo las completadas y ordenar por más recientes primero
     completedTasks = normalizedTasks.filter((t: Task) => t.completed);
   }

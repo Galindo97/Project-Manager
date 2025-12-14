@@ -5,6 +5,7 @@ from datetime import datetime
 # User Schemas
 class UserBase(BaseModel):
     email: EmailStr
+    username: str  # ✅ AGREGADO
 
 class UserCreate(UserBase):
     password: str
@@ -58,6 +59,9 @@ class TaskBase(BaseModel):
     category: Optional[str] = None
     due_date: Optional[datetime] = None
     project_id: Optional[int] = None
+    notes: Optional[str] = None  # ✅ AGREGADO
+    progress: Optional[int] = 0  # ✅ AGREGADO
+    critical_points: Optional[str] = None  # ✅ AGREGADO
 
 class TaskCreate(TaskBase):
     pass
@@ -71,6 +75,9 @@ class TaskUpdate(BaseModel):
     due_date: Optional[datetime] = None
     completed: Optional[bool] = None
     project_id: Optional[int] = None
+    notes: Optional[str] = None  # ✅ AGREGADO
+    progress: Optional[int] = None  # ✅ AGREGADO
+    critical_points: Optional[str] = None  # ✅ AGREGADO
 
 class Task(TaskBase):
     id: int

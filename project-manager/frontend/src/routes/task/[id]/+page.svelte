@@ -112,11 +112,17 @@
 
   async function fetchTask() {
     try {
-      const res = await fetch(`${API_URL}/tasks/${taskId}`);
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/tasks/${taskId}`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       if (!res.ok) throw new Error('Tarea no encontrada');
       const data = await res.json();
       task = data;
-      
+
       // Parsear notas
       if (data.notes) {
         try {
@@ -125,7 +131,7 @@
           notes = [];
         }
       }
-      
+
       // Parsear puntos críticos
       if (data.critical_points) {
         try {
@@ -137,7 +143,7 @@
       } else {
         criticalPoints = [];
       }
-      
+
       loading = false;
     } catch (error) {
       console.error('Error fetching task:', error);
@@ -147,25 +153,28 @@
 
   async function updateTask(updates: Partial<Task>) {
     if (!task) return;
-    
-    const formData = new FormData();
-    formData.append('title', updates.title ?? task.title);
-    formData.append('priority', updates.priority ?? task.priority);
-    formData.append('completed', String(updates.completed ?? task.completed));
-    formData.append('category', updates.category ?? task.category ?? 'General');
-    
-    if (task.deadline) formData.append('deadline', task.deadline);
-    if (updates.description !== undefined) formData.append('description', updates.description);
-    if (updates.notes !== undefined) formData.append('notes', updates.notes);
-    if (updates.progress !== undefined) formData.append('progress', String(updates.progress));
-    if (updates.critical_points !== undefined) formData.append('critical_points', updates.critical_points);
-    
+
+    const token = localStorage.getItem('access_token');
+    const body = {
+      title: updates.title ?? task.title,
+      priority: updates.priority ?? task.priority,
+      completed: updates.completed ?? task.completed,
+      category: updates.category ?? task.category ?? 'General',
+      ...(task.deadline ? { due_date: task.deadline } : {}),
+      ...(updates.description !== undefined ? { description: updates.description } : {}),
+      ...(updates.notes !== undefined ? { notes: updates.notes } : {}),
+      ...(updates.progress !== undefined ? { progress: updates.progress } : {}),
+      ...(updates.critical_points !== undefined ? { critical_points: updates.critical_points } : {})
+    };
     try {
       const res = await fetch(`${API_URL}/tasks/${taskId}`, {
         method: 'PUT',
-        body: formData
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
       });
-      
       if (res.ok) {
         await fetchTask();
       }

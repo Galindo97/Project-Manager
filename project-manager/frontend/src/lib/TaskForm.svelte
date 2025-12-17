@@ -1,42 +1,62 @@
+
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import { Loader2 } from 'lucide-svelte';
+import { Button } from "$lib/components/ui/button/index.js";
+import { Input } from "$lib/components/ui/input/index.js";
+import { Label } from "$lib/components/ui/label/index.js";
+import { Loader2 } from 'lucide-svelte';
 
-	let title = $state('');
-	let priority = $state('medium');
-	let category = $state('');
-	let deadline = $state('');
-	let isSubmitting = $state(false);
+let title = $state('');
+let priority = $state('medium');
+let category = $state('');
+let deadline = $state('');
+let file = $state<File | null>(null);
+let isSubmitting = $state(false);
 
-	let { onSubmit } = $props();
+let { onSubmit } = $props();
 
-	async function handleSubmit(e: Event) {
-		e.preventDefault();
-		if (!title.trim()) return;
-		
-		isSubmitting = true;
-		try {
-			await onSubmit({
-				title,
-				priority,
-				category,
-				deadline,
-				completed: false
-			});
-			// Reset form
-			title = '';
-			priority = 'medium';
-			category = '';
-			deadline = '';
-		} finally {
-			isSubmitting = false;
-		}
+function handleFileChange(e: Event) {
+	const target = e.target as HTMLInputElement;
+	if (target.files && target.files.length > 0) {
+		file = target.files[0];
+	} else {
+		file = null;
 	}
+}
+
+async function handleSubmit(e: Event) {
+	e.preventDefault();
+	if (!title.trim()) return;
+	isSubmitting = true;
+	try {
+		await onSubmit({
+			title,
+			priority,
+			category,
+			deadline,
+			completed: false,
+			file
+		});
+		// Reset form
+		title = '';
+		priority = 'medium';
+		category = '';
+		deadline = '';
+		file = null;
+		// Limpiar input de archivo si es necesario
+	} finally {
+		isSubmitting = false;
+	}
+}
 </script>
 
-<form onsubmit={handleSubmit} class="space-y-4">
+<form onsubmit={handleSubmit} class="space-y-4" enctype="multipart/form-data">
+	   <div class="space-y-2">
+		   <Label for="file">Archivo adjunto</Label>
+		<input id="file" type="file" onchange={handleFileChange} class="border rounded p-2 w-full" />
+		   {#if file}
+			   <div class="text-xs text-gray-500">Archivo seleccionado: {file.name}</div>
+		   {/if}
+	   </div>
 	<div class="space-y-2">
 		<Label for="title">Task Title</Label>
 		<Input id="title" bind:value={title} placeholder="What needs to be done?" required />

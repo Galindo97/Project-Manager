@@ -942,9 +942,7 @@
   opacity: 1;
 }
 
-.stat-card.active {
-  border-color: rgba(255, 123, 84, 0.3);
-}
+
 
 .stat-link {
   display: flex;

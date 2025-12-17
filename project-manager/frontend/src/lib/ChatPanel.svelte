@@ -63,9 +63,14 @@
 		isLoading = true;
 
 		try {
+			// Obtener token de localStorage
+			const token = localStorage.getItem('access_token');
 			const response = await fetch(`${API_URL}/api/chat`, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { 'Authorization': `Bearer ${token}` } : {})
+				},
 				body: JSON.stringify({
 					message: currentMessage,
 					task_id: taskId,

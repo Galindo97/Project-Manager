@@ -1,9 +1,42 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import File, UploadFile
+from fastapi.responses import JSONResponse
+import shutil
+import os
+
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
+from pydantic import BaseModel
+
+# Crear la app antes de usarla
+
+from fastapi.staticfiles import StaticFiles
+app = FastAPI()
+
+UPLOAD_DIR = "uploads"
+app.mount("/static", StaticFiles(directory=UPLOAD_DIR), name="static")
+# ==================== ENDPOINT PARA SUBIR ARCHIVOS ====================
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    file_location = os.path.join(UPLOAD_DIR, file.filename)
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return {"filename": file.filename}
+from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
+from typing import List, Optional
+from pydantic import BaseModel
+import os
+
+# Importar Gemini
+import google.generativeai as genai
 
 import models
 import schemas
@@ -28,62 +61,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==================== UTILIDAD ADMIN: MARCAR TODAS COMO COMPLETADAS ====================
-@app.post("/tasks/mark_all_completed", status_code=200)
-def mark_all_tasks_completed(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
-    """Marca todas las tareas del usuario autenticado como completadas."""
-    tasks = db.query(models.Task).filter(models.Task.owner_id == current_user.id).all()
-    for task in tasks:
-        task.completed = True
-        task.completed_at = datetime.utcnow()
-        task.status = "completed"
-    db.commit()
-    return {"detail": f"{len(tasks)} tareas marcadas como completadas"}
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-from typing import List
+# ==================== CONFIGURAR GEMINI ====================
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-import models
-import schemas
-import auth
-from database import engine, get_db
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    print("✅ Gemini API configurada correctamente")
+else:
+    print("⚠️ GEMINI_API_KEY no encontrada. El chat con IA no funcionará.")
 
-# Crear tablas
-models.Base.metadata.create_all(bind=engine)
+# ==================== MODELOS PARA CHAT ====================
+class ChatRequest(BaseModel):
+    message: str
+    conversation_history: Optional[List[dict]] = []
 
-app = FastAPI()
-
-# Configurar CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:4173",
-        "http://localhost:5174"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class ChatResponse(BaseModel):
+    response: str
+    model_used: str
 
 # ==================== AUTENTICACIÓN ====================
 
 @app.post("/register", response_model=schemas.User)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # Verificar si el email ya existe
     db_user = auth.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Verificar si el username ya existe
     db_user = auth.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already taken")
     
-    # Crear usuario
     hashed_password = auth.get_password_hash(user.password)
     db_user = models.User(
         username=user.username,
@@ -97,7 +104,6 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/login", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # form_data.username contiene el email (es estándar OAuth2)
     user = auth.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -122,23 +128,19 @@ def get_tasks(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    """Obtener todas las tareas del usuario actual"""
     return db.query(models.Task).filter(
         models.Task.owner_id == current_user.id
     ).all()
-
 
 @app.get("/tasks/completed", response_model=List[schemas.Task])
 def get_completed_tasks(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    """Obtener solo las tareas completadas del usuario actual, asegurando que 'completed' sea booleano real."""
     tasks = db.query(models.Task).filter(
         models.Task.owner_id == current_user.id,
         models.Task.completed == True
     ).all()
-    # Normalizar el campo completed a booleano real
     for t in tasks:
         t.completed = bool(t.completed)
     return tasks
@@ -149,7 +151,6 @@ def create_task(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    """Crear una nueva tarea"""
     db_task = models.Task(
         **task.dict(exclude_unset=True),
         owner_id=current_user.id,
@@ -166,13 +167,15 @@ def get_task(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    """Obtener una tarea específica"""
+    print(f"🔎 Buscando tarea con id={task_id} para usuario id={current_user.id} ({current_user.username})")
     task = db.query(models.Task).filter(
         models.Task.id == task_id, 
         models.Task.owner_id == current_user.id
     ).first()
     if not task:
+        print(f"❌ Tarea no encontrada o no pertenece al usuario. id={task_id}, usuario={current_user.username}")
         raise HTTPException(status_code=404, detail="Task not found")
+    print(f"✅ Tarea encontrada: {task.title} (id={task.id}) para usuario {current_user.username}")
     return task
 
 @app.put("/tasks/{task_id}", response_model=schemas.Task)
@@ -182,7 +185,6 @@ def update_task(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    """Actualizar una tarea"""
     task = db.query(models.Task).filter(
         models.Task.id == task_id, 
         models.Task.owner_id == current_user.id
@@ -192,7 +194,6 @@ def update_task(
     
     update_data = task_update.dict(exclude_unset=True)
     
-    # Si se marca como completada, agregar timestamp
     if "completed" in update_data and update_data["completed"]:
         update_data["completed_at"] = datetime.utcnow()
         update_data["status"] = "completed"
@@ -200,7 +201,6 @@ def update_task(
         update_data["completed_at"] = None
         update_data["status"] = "pending"
     
-    # Actualizar campos
     for key, value in update_data.items():
         setattr(task, key, value)
     
@@ -214,7 +214,6 @@ def delete_task(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Eliminar una tarea"""
     task = db.query(models.Task).filter(
         models.Task.id == task_id,
         models.Task.owner_id == current_user.id
@@ -226,6 +225,19 @@ def delete_task(
     db.commit()
     return None
 
+@app.post("/tasks/mark_all_completed", status_code=200)
+def mark_all_tasks_completed(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    tasks = db.query(models.Task).filter(models.Task.owner_id == current_user.id).all()
+    for task in tasks:
+        task.completed = True
+        task.completed_at = datetime.utcnow()
+        task.status = "completed"
+    db.commit()
+    return {"detail": f"{len(tasks)} tareas marcadas como completadas"}
+
 # ==================== PROYECTOS ====================
 
 @app.get("/projects", response_model=List[schemas.Project])
@@ -233,7 +245,6 @@ def get_projects(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    """Obtener todos los proyectos del usuario actual"""  # ✅ AGREGADO
     return db.query(models.Project).filter(
         models.Project.owner_id == current_user.id
     ).all()
@@ -244,7 +255,6 @@ def create_project(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Crear un nuevo proyecto"""
     db_project = models.Project(**project.dict(), owner_id=current_user.id)
     db.add(db_project)
     db.commit()
@@ -257,7 +267,6 @@ def get_project(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Obtener un proyecto específico"""
     project = db.query(models.Project).filter(
         models.Project.id == project_id,
         models.Project.owner_id == current_user.id
@@ -273,7 +282,6 @@ def update_project(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Actualizar un proyecto"""
     project = db.query(models.Project).filter(
         models.Project.id == project_id,
         models.Project.owner_id == current_user.id
@@ -295,7 +303,6 @@ def delete_project(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Eliminar un proyecto"""
     project = db.query(models.Project).filter(
         models.Project.id == project_id,
         models.Project.owner_id == current_user.id
@@ -306,3 +313,51 @@ def delete_project(
     db.delete(project)
     db.commit()
     return None
+
+# ==================== CHAT CON IA (GEMINI) ====================
+
+@app.post("/api/chat", response_model=ChatResponse)
+async def chat_endpoint(
+    chat_request: ChatRequest,
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Endpoint de chat con IA usando Gemini.
+    Requiere autenticación.
+    """
+    try:
+        if not GEMINI_API_KEY:
+            raise HTTPException(
+                status_code=503,
+                detail="El servicio de IA no está disponible. Contacta al administrador."
+            )
+        
+        # Inicializar modelo
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Construir contexto con historial de conversación
+        conversation_context = f"Eres un asistente de gestión de proyectos y tareas para el usuario {current_user.username}.\n\n"
+        
+        if chat_request.conversation_history:
+            for msg in chat_request.conversation_history[-5:]:  # Últimos 5 mensajes
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                conversation_context += f"{role}: {content}\n"
+        
+        # Prompt completo
+        full_prompt = f"{conversation_context}user: {chat_request.message}\n\nassistant:"
+        
+        # Generar respuesta
+        response = model.generate_content(full_prompt)
+        
+        return ChatResponse(
+            response=response.text,
+            model_used="gemini-pro"
+        )
+        
+    except Exception as e:
+        print(f"❌ Error en chat: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al procesar tu mensaje: {str(e)}"
+        )

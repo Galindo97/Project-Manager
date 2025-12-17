@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8000/';
 
 // Get token from localStorage
 function getToken(): string | null {
@@ -80,7 +80,7 @@ export const authAPI = {
         formData.append('username', email);
         formData.append('password', password);
 
-        const response = await fetch(`${API_BASE_URL}/login`, {
+        const response = await fetch(`${API_BASE_URL}login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -99,7 +99,7 @@ export const authAPI = {
     },
 
     async getCurrentUser() {
-        return apiRequest('/users/me');
+        return apiRequest('users/me');
     },
 
     logout() {
@@ -117,11 +117,11 @@ export const authAPI = {
 // Tasks API
 export const tasksAPI = {
     async getAll() {
-        return apiRequest('/tasks');
+        return apiRequest('tasks');
     },
 
     async getById(id: number) {
-        return apiRequest(`/tasks/${id}`);
+        return apiRequest(`tasks/${id}`);
     },
 
     async create(task: {
@@ -133,7 +133,7 @@ export const tasksAPI = {
         due_date?: string;
         project_id?: number;
     }) {
-        return apiRequest('/tasks', {
+        return apiRequest('tasks', {
             method: 'POST',
             body: JSON.stringify(task),
         });
@@ -149,14 +149,14 @@ export const tasksAPI = {
         completed?: boolean;
         project_id?: number;
     }) {
-        return apiRequest(`/tasks/${id}`, {
+        return apiRequest(`tasks/${id}`, {
             method: 'PUT',
             body: JSON.stringify(task),
         });
     },
 
     async delete(id: number) {
-        return apiRequest(`/tasks/${id}`, {
+        return apiRequest(`tasks/${id}`, {
             method: 'DELETE',
         });
     }

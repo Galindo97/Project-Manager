@@ -4,7 +4,7 @@
   import { quintOut } from 'svelte/easing';
   import { goto } from '$app/navigation';
   import * as AlertDialog from '$lib/components/ui/alert-dialog';
-  import { CheckCircle2, Trash2, Calendar, RotateCcw, PartyPopper, Trophy, Award, Sun, Moon, Menu, X, Home, ListTodo, Flame, Clock, Search, XCircle, LogOut, Bot, Eye } from 'lucide-svelte';
+  import { CheckCircle2, Trash2, Calendar, RotateCcw, PartyPopper, Trophy, Award, Sun, Moon, Menu, X, Home, ListTodo, Flame, Clock, Search, XCircle, LogOut, Bot, Eye, Paperclip } from 'lucide-svelte';
   import { authStore } from '$lib/stores/auth';
   import ChatPanel from '$lib/ChatPanel.svelte';
 
@@ -76,21 +76,24 @@
   async function restoreTask(id: number) {
     const task = completedTasks.find(t => t.id === id);
     if (!task) return;
-    
-    const formData = new FormData();
-    formData.append('title', task.title);
-    formData.append('priority', task.priority);
-    formData.append('category', task.category || 'General');
-    formData.append('completed', 'false');
-    if (task.deadline) {
-      formData.append('deadline', task.deadline);
-    }
-    
+
+    const token = localStorage.getItem('access_token');
+    const body = {
+      title: task.title,
+      priority: task.priority,
+      category: task.category || 'General',
+      completed: false,
+      ...(task.deadline ? { due_date: task.deadline } : {})
+    };
     await fetch(`${API_URL}/tasks/${id}`, {
       method: 'PUT',
-      body: formData
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
     });
-    
+
     await fetchCompletedTasks();
   }
 
@@ -251,6 +254,27 @@
                 </div>
               </div>
               
+              {#if task.files && task.files.length > 0}
+                <div class="task-files-list">
+                  {#each task.files as file}
+                    <a
+                      href={`http://localhost:8000/static/${file}`}
+                      target="_blank"
+                      rel="noopener"
+                      class="file-container"
+                      title={file}
+                      onclick={(e) => e.stopPropagation()}
+                    >
+                      {#if file.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)}
+                        <img src={`http://localhost:8000/static/${file}`} alt={file} class="file-preview-img" />
+                      {:else}
+                        <Paperclip class="h-4 w-4" />
+                      {/if}
+                      <span class="file-name">{file}</span>
+                    </a>
+                  {/each}
+                </div>
+              {/if}
               <div class="task-actions">
                 <button 
                   class="action-btn restore-btn" 
@@ -268,6 +292,48 @@
                   <Trash2 size={16} />
                 </button>
               </div>
+            <style>
+              .task-files-list {
+                display: flex;
+                gap: 0.5rem;
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
+              }
+              .file-container {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.25rem;
+                background: rgba(99, 102, 241, 0.13);
+                color: #6366f1;
+                border-radius: 6px;
+                padding: 0.1rem 0.6rem 0.1rem 0.3rem;
+                font-size: 0.85rem;
+                font-weight: 500;
+                text-decoration: none;
+                transition: background 0.2s;
+                max-width: 160px;
+                overflow: hidden;
+              }
+              .file-container:hover {
+                background: rgba(99, 102, 241, 0.25);
+                color: #4338ca;
+              }
+              .file-name {
+                max-width: 90px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+              .file-preview-img {
+                width: 28px;
+                height: 28px;
+                object-fit: cover;
+                border-radius: 4px;
+                margin-right: 0.25rem;
+                background: #fff;
+                border: 1px solid #e5e7eb;
+              }
+            </style>
             </div>
           {/each}
         </div>
@@ -608,14 +674,14 @@
     position: absolute;
     top: -0.5rem;
     right: -0.5rem;
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, #ff7b54, #ffb26b);
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #0a0e1a;
+    color: #ff7b54;
+    background: none;
+    border-radius: 0;
+    width: auto;
+    height: auto;
     opacity: 0;
     transition: all 0.3s;
   }

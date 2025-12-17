@@ -5,7 +5,7 @@
 
 	async function loadProjects() {
 		try {
-			const res = await fetch('http://127.0.0.1:8000/projects');
+			const res = await fetch('https://br03lvnr-8000.usw3.devtunnels.ms/project');
 			projects = await res.json();
 		} catch (error) {
 			console.error('Error cargando proyectos:', error);
@@ -15,7 +15,7 @@
 	async function addProject() {
 		if (!name.trim()) return alert('El nombre es obligatorio');
 
-		const res = await fetch('http://127.0.0.1:8000/projects', {
+		const res = await fetch('https://br03lvnr-8000.usw3.devtunnels.ms/projects', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ name, description }),

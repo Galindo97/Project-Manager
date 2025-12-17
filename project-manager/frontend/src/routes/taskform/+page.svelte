@@ -6,9 +6,52 @@ let lastSubmission: any = null;
 
 
 
-function handleSubmit(e: CustomEvent) {
-  lastSubmission = e.detail;
-  alert('Datos enviados: ' + JSON.stringify(e.detail));
+async function handleSubmit(e: CustomEvent) {
+  const data = e.detail;
+  let filename = null;
+  if (data.file) {
+    const formData = new FormData();
+    formData.append('file', data.file);
+    const token = localStorage.getItem('access_token');
+    const res = await fetch('http://localhost:8000/upload', {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData
+    });
+    if (res.ok) {
+      const result = await res.json();
+      filename = result.filename;
+    } else {
+      alert('Error al subir el archivo');
+      return;
+    }
+  }
+  // Crear la tarea con el nombre del archivo si existe
+  const taskPayload = {
+    title: data.title,
+    priority: data.priority,
+    category: data.category,
+    deadline: data.deadline,
+    completed: false,
+    files: filename ? [filename] : []
+  };
+  // Llamar a la API para crear la tarea
+  const token = localStorage.getItem('access_token');
+  const res = await fetch('http://localhost:8000/tasks', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(taskPayload)
+  });
+  if (res.ok) {
+    const created = await res.json();
+    lastSubmission = created;
+    alert('Tarea creada: ' + JSON.stringify(created));
+  } else {
+    alert('Error al crear la tarea');
+  }
 }
 </script>
 

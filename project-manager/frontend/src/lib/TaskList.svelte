@@ -70,10 +70,20 @@
 								{/if}
 
 								{#if task.files && task.files.length > 0}
-									<span class="task-files" title={`${task.files.length} archivos`}>
-										<Paperclip class="h-3 w-3" />
-										{task.files.length}
-									</span>
+									<div class="task-files-list">
+										{#each task.files as file}
+											<a
+												href={`http://localhost:8000/static/${file}`}
+												target="_blank"
+												rel="noopener"
+												class="file-container"
+												title={file}
+											>
+												<Paperclip class="h-4 w-4" />
+												<span class="file-name">{file}</span>
+											</a>
+										{/each}
+									</div>
 								{/if}
 							</div>
 						</div>
@@ -220,11 +230,39 @@
 		color: #ffb26b;
 	}
 
-	.task-deadline,
-	.task-files {
+	.task-deadline {
 		display: flex;
 		align-items: center;
 		gap: 0.25rem;
+	}
+
+	.task-files-list {
+		display: flex;
+		gap: 0.5rem;
+		margin-top: 0.25rem;
+	}
+	.file-container {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		background: rgba(99, 102, 241, 0.13);
+		color: #6366f1;
+		border-radius: 6px;
+		padding: 0.1rem 0.6rem 0.1rem 0.3rem;
+		font-size: 0.85rem;
+		font-weight: 500;
+		text-decoration: none;
+		transition: background 0.2s;
+	}
+	.file-container:hover {
+		background: rgba(99, 102, 241, 0.25);
+		color: #4338ca;
+	}
+	.file-name {
+		max-width: 90px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.task-actions-wrapper {

@@ -13,7 +13,7 @@ async function handleSubmit(e: CustomEvent) {
     const formData = new FormData();
     formData.append('file', data.file);
     const token = localStorage.getItem('access_token');
-    const res = await fetch('http://localhost:8000/upload', {
+    const res = await fetch('https://br03lvnr-8000.usw3.devtunnels.ms/upload', {
       method: 'POST',
       headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       body: formData
@@ -37,7 +37,7 @@ async function handleSubmit(e: CustomEvent) {
   };
   // Llamar a la API para crear la tarea
   const token = localStorage.getItem('access_token');
-  const res = await fetch('http://localhost:8000/tasks', {
+  const res = await fetch('https://br03lvnr-8000.usw3.devtunnels.ms/tasks', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -73,7 +73,7 @@
 									<div class="task-files-list">
 										{#each task.files as file}
 											<a
-												href={`http://localhost:8000/static/${file}`}
+												href={`https://br03lvnr-8000.usw3.devtunnels.ms/static/${file}`}
 												target="_blank"
 												rel="noopener"
 												class="file-container"

@@ -57,7 +57,7 @@
     critical_points?: string;
   };
 
-  const API_URL = 'http://localhost:8000';
+  const API_URL = 'https://br03lvnr-8000.usw3.devtunnels.ms/';
   
   let task = $state<Task | null>(null);
   let loading = $state(true);

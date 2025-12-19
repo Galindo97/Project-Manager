@@ -19,7 +19,7 @@
   };
 
   let completedTasks = $state<Task[]>([]);
-  const API_URL = 'http://localhost:8000';
+  const API_URL = 'https://br03lvnr-8000.usw3.devtunnels.ms/';
   let taskToDelete = $state<number | null>(null);
   let showDeleteDialog = $state(false);
   let darkMode = $state(false);
@@ -258,7 +258,7 @@
                 <div class="task-files-list">
                   {#each task.files as file}
                     <a
-                      href={`http://localhost:8000/static/${file}`}
+                      href={`https://br03lvnr-8000.usw3.devtunnels.ms/static/${file}`}
                       target="_blank"
                       rel="noopener"
                       class="file-container"
@@ -266,7 +266,7 @@
                       onclick={(e) => e.stopPropagation()}
                     >
                       {#if file.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)}
-                        <img src={`http://localhost:8000/static/${file}`} alt={file} class="file-preview-img" />
+                        <img src={`https://br03lvnr-8000.usw3.devtunnels.ms/static/${file}`} alt={file} class="file-preview-img" />
                       {:else}
                         <Paperclip class="h-4 w-4" />
                       {/if}

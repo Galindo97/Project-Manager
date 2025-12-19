@@ -25,7 +25,7 @@
 	async function loadProjects() {
 		isLoading = true;
 		try {
-			const res = await fetch('http://localhost:8000/projects');
+			const res = await fetch('https://br03lvnr-8000.usw3.devtunnels.ms/projects');
 			if (!res.ok) throw new Error('Error al obtener proyectos');
 			projects = await res.json();
 		} catch (error) {
@@ -39,7 +39,7 @@
 		if (!name.trim()) return;
 		isCreating = true;
 		try {
-			const res = await fetch('http://localhost:8000/projects', {
+			const res = await fetch('https://br03lvnr-8000.usw3.devtunnels.ms/projects', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ name, description }),
@@ -61,7 +61,7 @@
 	async function deleteProject(id: number) {
 		if (!confirm('¿Seguro que quieres eliminar este proyecto?')) return;
 		try {
-			const res = await fetch(`http://localhost:8000/projects/${id}`, {
+			const res = await fetch(`https://br03lvnr-8000.usw3.devtunnels.ms/projects/${id}`, {
 				method: 'DELETE'
 			});
 			if (res.ok) {

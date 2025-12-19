@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 
-const API_BASE_URL = 'http://localhost:8000/';
+const API_BASE_URL = 'https://br03lvnr-8000.usw3.devtunnels.ms/';
 
 // Get token from localStorage
 function getToken(): string | null {

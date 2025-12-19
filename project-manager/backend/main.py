@@ -54,7 +54,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:4173",
-        "http://localhost:5174"
+        "http://localhost:5174",
+        "https://br03lvnr-5173.usw3.devtunnels.ms"
     ],
     allow_credentials=True,
     allow_methods=["*"],

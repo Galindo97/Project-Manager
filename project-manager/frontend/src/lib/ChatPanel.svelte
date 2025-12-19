@@ -22,7 +22,7 @@
 	let showSettings = $state(false);
 	let isLoading = $state(false);
 
-	const API_URL = 'http://localhost:8000';
+	const API_URL = 'https://br03lvnr-8000.usw3.devtunnels.ms/';
 
 	$effect(() => {
 		if (typeof window !== 'undefined') {
